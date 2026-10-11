@@ -1,0 +1,20 @@
+[
+  {
+    "id": "5cc44f13-517e-43bc-a245-1e78884989d6",
+    "username": "admin",
+    "email": "admin@poketracker.cz",
+    "displayName": "Admin",
+    "role": "admin",
+    "passwordHash": "3eb3fe66b31e3b4d10fa70b5cad49c7112294af6ae4e476a1c405155d45aa121",
+    "createdAt": "2026-10-11T13:03:32.8787350Z"
+  },
+  {
+    "id": "a9ec17f1-e5e2-4ae3-a020-ddd70900dc48",
+    "username": "nochcer",
+    "email": "jan@poketracker.cz",
+    "displayName": "nochcer",
+    "role": "user",
+    "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "createdAt": "2026-10-11T13:21:40.862Z"
+  }
+]

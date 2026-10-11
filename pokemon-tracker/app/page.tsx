@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { PokemonCard } from '@/components/PokemonCard';
+import { ProfileCard } from '@/components/auth/ProfileCard';
 import { SearchForm } from '@/components/SearchForm';
 import { SiteHeader } from '@/components/SiteHeader';
 import { getFallbackCards, searchPokemonCards } from '@/lib/pokemon-api';
@@ -52,6 +53,8 @@ export default function Home() {
       <SiteHeader />
 
       <main className="max-w-6xl mx-auto px-6 py-10">
+        <ProfileCard />
+
         <div className="mb-10 text-center">
           <h2 className="text-4xl font-extrabold mb-3">Sleduj ceny Pokémon karet a boxů</h2>
           <p className="text-slate-400 mb-6">Aktuální přehled tržních cen, PSA ohodnocení a odkazů na nákup.</p>
