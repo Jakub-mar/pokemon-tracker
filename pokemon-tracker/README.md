@@ -23,6 +23,16 @@ Při nasazení na více instancí nebo serverless platformu je potřeba uživate
 
 Přihlášený admin najde na stránce **Administrace** seznam uživatelů. Může upravit zobrazované jméno, změnit roli, účet zablokovat nebo smazat. Změny jsou kontrolované také na serveru; poslední admin ani vlastní účet nelze smazat nebo zablokovat.
 
+### Přihlášení přes Google
+
+1. V Google Cloud Console vytvoř OAuth klienta typu **Web application** a přidej do jeho autorizovaných přesměrovacích URI:
+   `http://localhost:3000/api/auth/callback/google` (lokální vývoj) a callback URL produkční aplikace.
+2. Zkopíruj `.env.example` do `.env.local` a vyplň `GOOGLE_CLIENT_ID` a `GOOGLE_CLIENT_SECRET`.
+3. `GOOGLE_REDIRECT_URI` můžeš nechat prázdné; aplikace pak použije `NEXTAUTH_URL` a callback `/api/auth/callback/google`. Pokud ho nastavíš, musí přesně odpovídat URL registrované v Google Cloud Console.
+4. Restartuj vývojový server.
+
+Stejné proměnné nastav také v prostředí nasazené aplikace. Účet vytvořený přes Google se založí automaticky při prvním přihlášení; pokud už v aplikaci existuje účet se stejným ověřeným e-mailem, přihlášení přes Google se napojí na tento účet.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

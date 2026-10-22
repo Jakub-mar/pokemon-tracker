@@ -22,5 +22,6 @@ export type PokemonBox = {
   images?: {
     logo?: string;
     symbol?: string;
+    product?: string;
   };
 };

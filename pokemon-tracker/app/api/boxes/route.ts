@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBoxProductSuffix, getBoxSetQuery } from '@/lib/box-api';
 import type { PokemonBox } from '@/types/box';
 
 function normalizeText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function matchesBoxQuery(box: PokemonBox, query: string) {
-  const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) {
-    return true;
-  }
-
-  const haystack = normalizeText(
-    [box.name, box.series, box.set?.name, box.type].filter(Boolean).join(' '),
-  );
-
-  return haystack.includes(normalizedQuery) || normalizedQuery.includes(haystack);
-}
-
 function getFallbackBoxes(query: string): PokemonBox[] {
-  const normalizedQuery = normalizeText(query);
+  const setQuery = getBoxSetQuery(query);
+  const terms = setQuery.split(' ').filter(Boolean);
   const items: PokemonBox[] = [
+    {
+      id: 'ascended-heroes-booster-box',
+      name: 'Ascended Heroes Elite Trainer Box',
+      type: 'box',
+      set: { name: 'Ascended Heroes' },
+      images: { product: '/images/ascended-heroes-box.png' },
+    },
     {
       id: 'celebrations-booster-box',
       name: 'Celebrations Booster Box',
@@ -43,7 +39,26 @@ function getFallbackBoxes(query: string): PokemonBox[] {
     },
   ];
 
-  return items.filter((box) => matchesBoxQuery(box, normalizedQuery));
+  return items
+    .filter((box) => {
+      const name = normalizeText(box.set?.name ?? box.name);
+      return terms.length > 0 && terms.every((term) => name.includes(term));
+    })
+    .map((box) => {
+      const suffix = getBoxProductSuffix(query);
+      if (box.images?.product && suffix === 'Elite Trainer Box') {
+        return box;
+      }
+
+      return {
+        ...box,
+        name: `${box.set?.name ?? box.name.replace(/ Booster Box$/, '')} ${suffix}`,
+        type: suffix === 'Booster Box' ? 'booster-box' : 'box',
+        images: box.images?.product
+          ? { logo: box.images.logo, symbol: box.images.symbol }
+          : box.images,
+      };
+    });
 }
 
 export async function GET(request: NextRequest) {
@@ -53,8 +68,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Chybí vyhledávaný box.' }, { status: 400 });
   }
 
+  const setTerms = getBoxSetQuery(query).split(' ').filter(Boolean);
+  if (!setTerms.length) {
+    return NextResponse.json([]);
+  }
+
   const apiUrl = new URL('https://api.pokemontcg.io/v2/sets');
-  apiUrl.searchParams.set('q', `name:${query}*`);
+  apiUrl.searchParams.set('q', setTerms.map((term) => `name:${term}*`).join(' '));
   apiUrl.searchParams.set('pageSize', '250');
 
   try {
@@ -76,18 +96,27 @@ export async function GET(request: NextRequest) {
     } = await response.json();
 
     const boxes: PokemonBox[] = (result.data ?? [])
-      .filter((box) => /box|booster/i.test(box.name) || /box|booster/i.test(box.series ?? ''))
-      .map((box): PokemonBox => ({
-        id: box.id,
-        name: box.name,
-        type: /booster/i.test(box.name) ? 'booster-box' : 'box',
-        set: { name: box.name },
-        series: box.series,
-        releaseDate: box.releaseDate,
-        printedTotal: box.printedTotal,
-        images: box.images,
-      }))
-      .filter((box) => matchesBoxQuery(box, query));
+      .filter((set) => {
+        const name = normalizeText(set.name);
+        return setTerms.every((term) => name.includes(term));
+      })
+      .map((set): PokemonBox => {
+        const suffix = getBoxProductSuffix(query);
+        const isAscendedHeroes = normalizeText(set.name) === 'ascended heroes';
+        return {
+          id: `${set.id}-${normalizeText(suffix).replace(/\s+/g, '-')}`,
+          name: `${set.name} ${suffix}`,
+          type: suffix === 'Booster Box' ? 'booster-box' : 'box',
+          set: { name: set.name },
+          series: set.series,
+          releaseDate: set.releaseDate,
+          printedTotal: set.printedTotal,
+          images:
+            isAscendedHeroes && suffix === 'Elite Trainer Box'
+              ? { ...set.images, product: '/images/ascended-heroes-box.png' }
+              : set.images,
+        };
+      });
 
     return NextResponse.json(boxes.length ? boxes : getFallbackBoxes(query));
   } catch {

@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { PokemonBoxCard } from '@/components/PokemonBoxCard';
 import { PokemonCard } from '@/components/PokemonCard';
 import { ProfileCard } from '@/components/auth/ProfileCard';
 import { SearchForm } from '@/components/SearchForm';
 import { SiteHeader } from '@/components/SiteHeader';
+import { getFallbackBoxes, searchPokemonBoxes } from '@/lib/box-api';
 import { getFallbackCards, searchPokemonCards } from '@/lib/pokemon-api';
+import type { PokemonBox } from '@/types/box';
 import type { PokemonCard as PokemonCardData } from '@/types/pokemon';
 
 export default function Home() {
   const [search, setSearch] = useState('');
   const [cards, setCards] = useState<PokemonCardData[]>([]);
+  const [boxes, setBoxes] = useState<PokemonBox[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,7 +24,8 @@ export default function Home() {
 
     if (!query) {
       setCards([]);
-      setError('Zadej název karty nebo Pokémona.');
+      setBoxes([]);
+      setError('Zadej název karty, Pokémona nebo boxu.');
       return;
     }
 
@@ -28,21 +33,20 @@ export default function Home() {
     setError('');
 
     try {
-      const results = await searchPokemonCards(query);
-      setCards(results);
+      const [cardResults, boxResults] = await Promise.all([
+        searchPokemonCards(query).catch(() => getFallbackCards(query)),
+        searchPokemonBoxes(query).catch(() => getFallbackBoxes(query)),
+      ]);
+      setCards(cardResults);
+      setBoxes(boxResults);
 
-      if (!results.length) {
-        setError(`Pro „${query}“ jsme žádnou kartu nenašli.`);
+      if (!cardResults.length && !boxResults.length) {
+        setError(`Pro „${query}“ jsme žádnou kartu ani box nenašli.`);
       }
     } catch {
-      const fallbackCards = getFallbackCards(query);
-
-      if (fallbackCards.length) {
-        setCards(fallbackCards);
-      } else {
-        setCards([]);
-        setError('Karty se teď nepodařilo načíst. Zkus to prosím znovu.');
-      }
+      setCards([]);
+      setBoxes([]);
+      setError('Karty ani boxy se teď nepodařilo načíst. Zkus to prosím znovu.');
     } finally {
       setIsLoading(false);
     }
@@ -68,17 +72,30 @@ export default function Home() {
 
         {error && <p className="mb-8 text-center text-rose-400">{error}</p>}
 
-        {!cards.length && !error && !isLoading && (
+        {!cards.length && !boxes.length && !error && !isLoading && (
           <div className="py-16 text-center text-slate-500">
-            <p className="text-lg font-semibold text-slate-300">Vyhledej svou první kartu</p>
+            <p className="text-lg font-semibold text-slate-300">Vyhledej svou první kartu nebo box</p>
             <p className="mt-2 text-sm">Výsledky se objeví tady po zadání názvu.</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => <PokemonCard key={card.id} card={card} />)}
-        </div>
+        {cards.length > 0 && (
+          <section className="mb-10">
+            <h3 className="mb-4 text-xl font-bold">Karty</h3>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {cards.map((card) => <PokemonCard key={card.id} card={card} />)}
+            </div>
+          </section>
+        )}
 
+        {boxes.length > 0 && (
+          <section>
+            <h3 className="mb-4 text-xl font-bold">Boxy</h3>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {boxes.map((box) => <PokemonBoxCard key={box.id} box={box} />)}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

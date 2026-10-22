@@ -16,5 +16,14 @@
     "role": "user",
     "passwordHash": "scrypt$f1cbb347fa405d298938d3d0dc133e2b$f2964531aeaa8f17ee0b511678e912439ce2b8e4f82ec7d9c1d414e50e66da5697269253924c81f37d3277f44ef58f27097ac370bf058a6f07065905052489a2",
     "createdAt": "2026-10-11T13:21:40.862Z"
+  },
+  {
+    "id": "27d4751e-540d-41ac-b8e0-9c0b481fe622",
+    "username": "jakub-martykan",
+    "email": "kuba.marty1@gmail.com",
+    "displayName": "Jakub Martykán",
+    "role": "user",
+    "isBlocked": false,
+    "createdAt": "2026-10-22T07:16:11.399Z"
   }
 ]

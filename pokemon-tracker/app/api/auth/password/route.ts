@@ -44,7 +44,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Heslo bylo změněno.' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Heslo se nepodařilo změnit.';
-    const status = message === 'Současné heslo není správné.' ? 400 : 500;
+    const status =
+      message === 'Současné heslo není správné.' ||
+      message === 'Tento účet používá přihlášení přes Google a nemá nastavené heslo.'
+        ? 400
+        : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

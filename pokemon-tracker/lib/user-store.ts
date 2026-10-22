@@ -6,7 +6,7 @@ export type StoredUser = {
   id: string;
   username: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
   displayName: string;
   role: 'admin' | 'user';
   isBlocked?: boolean;
@@ -138,6 +138,10 @@ export async function updateUserPassword(id: string, currentPassword: string, ne
     throw new Error('Uživatelský účet nebyl nalezen.');
   }
 
+  if (!user.passwordHash) {
+    throw new Error('Tento účet používá přihlášení přes Google a nemá nastavené heslo.');
+  }
+
   if (!passwordsMatch(currentPassword, user.passwordHash)) {
     throw new Error('Současné heslo není správné.');
   }
@@ -231,6 +235,50 @@ export async function createUser(input: { username: string; email: string; passw
   return newUser;
 }
 
+export async function findOrCreateGoogleUser(input: { email: string; name?: string }) {
+  const users = await readUsers();
+  const existingUser = users.find((user) => user.email.toLowerCase() === input.email.toLowerCase());
+
+  if (existingUser) {
+    if (existingUser.isBlocked) {
+      throw new Error('Tento účet byl zablokován.');
+    }
+    return existingUser;
+  }
+
+  const displayName = (input.name?.trim() || input.email.split('@')[0]).slice(0, 60);
+  const usernameBase =
+    (input.name || input.email.split('@')[0])
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 24) || 'google-user';
+  let username = usernameBase;
+  let suffix = 2;
+
+  while (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+    const suffixText = `-${suffix}`;
+    username = `${usernameBase.slice(0, 32 - suffixText.length)}${suffixText}`;
+    suffix += 1;
+  }
+
+  const newUser: StoredUser = {
+    id: crypto.randomUUID(),
+    username,
+    email: input.email,
+    displayName,
+    role: 'user',
+    isBlocked: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  users.push(newUser);
+  await writeUsers(users);
+  return newUser;
+}
+
 export async function verifyUserLogin(email: string, password: string) {
   const users = await readUsers();
   const user = users.find((storedUser) => storedUser.email.toLowerCase() === email.toLowerCase());
@@ -241,6 +289,10 @@ export async function verifyUserLogin(email: string, password: string) {
 
   if (user.isBlocked) {
     throw new Error('Tento účet byl zablokován.');
+  }
+
+  if (!user.passwordHash) {
+    throw new Error('Tento účet používá přihlášení přes Google.');
   }
 
   if (!passwordsMatch(password, user.passwordHash)) {

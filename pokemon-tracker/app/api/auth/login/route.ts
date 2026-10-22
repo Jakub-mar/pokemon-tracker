@@ -29,7 +29,12 @@ export async function POST(request: Request) {
     user = await verifyUserLogin(email, password);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Přihlášení se nepodařilo.';
-    const status = message === 'Uživatel neexistuje.' || message === 'Nesprávné heslo.' ? 401 : 500;
+    const status =
+      message === 'Uživatel neexistuje.' ||
+      message === 'Nesprávné heslo.' ||
+      message === 'Tento účet používá přihlášení přes Google.'
+        ? 401
+        : 500;
     return NextResponse.json(
       { error: message },
       { status },

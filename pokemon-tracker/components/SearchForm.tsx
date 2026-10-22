@@ -19,8 +19,8 @@ export function SearchForm({
         type="text"
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Zadej název karty (např. Charizard, Pikachu)..."
-        aria-label="Název nebo číslo karty"
+        placeholder="Zadej kartu nebo box (např. Charizard, Ascended Heroes)..."
+        aria-label="Název nebo číslo karty či boxu"
         className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm transition focus:border-yellow-400 focus:outline-none"
       />
       <button

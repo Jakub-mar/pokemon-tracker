@@ -1,6 +1,15 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ googleError?: string | string[] }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { googleError } = await searchParams;
+  const initialError = Array.isArray(googleError)
+    ? googleError[0]
+    : googleError;
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl">
@@ -10,7 +19,15 @@ export default function LoginPage() {
         </div>
 
         <div className="flex justify-center">
-          <LoginForm />
+          <LoginForm
+            initialError={
+              initialError === 'not-configured'
+                ? 'Přihlášení přes Google zatím není nakonfigurované.'
+                : initialError
+                  ? 'Přihlášení přes Google se nepodařilo. Zkus to prosím znovu.'
+                  : ''
+            }
+          />
         </div>
       </div>
     </main>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { saveAuthUser } from '@/lib/auth-session';
 import { signIn, signUp } from '@/lib/auth';
 import type { AppUser } from '@/types/user';
@@ -9,17 +10,19 @@ type AuthMode = 'login' | 'register';
 
 type LoginFormProps = {
   initialMode?: AuthMode;
+  initialError?: string;
   onAuthSuccess?: (user: AppUser) => void;
 };
 
-export function LoginForm({ initialMode = 'login', onAuthSuccess }: LoginFormProps) {
+export function LoginForm({ initialMode = 'login', initialError = '', onAuthSuccess }: LoginFormProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('jan@poketracker.cz');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
   const [userName, setUserName] = useState('');
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -37,11 +40,7 @@ export function LoginForm({ initialMode = 'login', onAuthSuccess }: LoginFormPro
         setUserName(user.displayName);
         saveAuthUser(user);
         onAuthSuccess?.(user);
-        window.location.href = '/';
-        setMode('login');
-        setUsername('');
-        setPassword('');
-        setConfirmPassword('');
+        router.replace('/');
         return;
       }
 
@@ -49,7 +48,7 @@ export function LoginForm({ initialMode = 'login', onAuthSuccess }: LoginFormPro
       setUserName(user.displayName);
       saveAuthUser(user);
       onAuthSuccess?.(user);
-      window.location.href = '/';
+      router.replace('/');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Operace se nepodařila.');
     } finally {
@@ -195,6 +194,18 @@ export function LoginForm({ initialMode = 'login', onAuthSuccess }: LoginFormPro
               : 'Registrovat se'}
         </button>
       </form>
+      <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+        <span className="h-px flex-1 bg-slate-800" />
+        nebo
+        <span className="h-px flex-1 bg-slate-800" />
+      </div>
+      <a
+        href="/api/auth/google"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900"
+      >
+        <span aria-hidden="true" className="text-lg font-bold text-white">G</span>
+        {mode === 'login' ? 'Přihlásit se přes Google' : 'Registrovat přes Google'}
+      </a>
     </div>
   );
 }
