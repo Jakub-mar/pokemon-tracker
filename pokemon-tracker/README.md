@@ -16,6 +16,13 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Účty
+
+Registrovaný uživatel může po přihlášení otevřít **Moje konto** a změnit zobrazované jméno nebo heslo. Přihlašovací relace je uložena v HttpOnly cookie; při odhlášení se zneplatní na serveru. Pro lokální běh se relace ukládají do `data/sessions.json`, který se do Gitu nepřidává.
+Při nasazení na více instancí nebo serverless platformu je potřeba uživatele i relace přesunout do sdíleného databázového úložiště.
+
+Přihlášený admin najde na stránce **Administrace** seznam uživatelů. Může upravit zobrazované jméno, změnit roli, účet zablokovat nebo smazat. Změny jsou kontrolované také na serveru; poslední admin ani vlastní účet nelze smazat nebo zablokovat.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

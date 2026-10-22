@@ -5,7 +5,7 @@
     "email": "admin@poketracker.cz",
     "displayName": "Admin",
     "role": "admin",
-    "passwordHash": "3eb3fe66b31e3b4d10fa70b5cad49c7112294af6ae4e476a1c405155d45aa121",
+    "passwordHash": "scrypt$fc84e1737aa7b220c4cf843deea37b81$7aa17a91b606365a5a7928b14bf36e232cb41bc3f2d45e5ad59c33c542f5614c6c5c68b7b69ad1e9ef52e580530a734d84aee98dcb0ae35d40570143771e094d",
     "createdAt": "2026-10-11T13:03:32.8787350Z"
   },
   {
@@ -14,7 +14,7 @@
     "email": "jan@poketracker.cz",
     "displayName": "nochcer",
     "role": "user",
-    "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "passwordHash": "scrypt$f1cbb347fa405d298938d3d0dc133e2b$f2964531aeaa8f17ee0b511678e912439ce2b8e4f82ec7d9c1d414e50e66da5697269253924c81f37d3277f44ef58f27097ac370bf058a6f07065905052489a2",
     "createdAt": "2026-10-11T13:21:40.862Z"
   }
 ]

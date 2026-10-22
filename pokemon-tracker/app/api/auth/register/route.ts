@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createAuthSession } from '@/lib/auth-session-store';
+import { setAuthCookie } from '@/lib/auth-server';
 import { createUser, findUserByEmail, findUserByUsername } from '@/lib/user-store';
 
 export async function POST(request: Request) {
@@ -25,8 +27,8 @@ export async function POST(request: Request) {
     }
 
     const createdUser = await createUser({ username, email, password });
-
-    return NextResponse.json({
+    const session = await createAuthSession(createdUser.id);
+    const response = NextResponse.json({
       user: {
         id: createdUser.id,
         username: createdUser.username,
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
         role: createdUser.role,
       },
     });
+    setAuthCookie(response, session.token);
+    return response;
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Registrace se nepodařila.' },

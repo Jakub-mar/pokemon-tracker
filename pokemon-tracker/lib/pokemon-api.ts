@@ -42,21 +42,31 @@ export async function searchPokemonCards(query: string): Promise<PokemonCard[]> 
 
   const cards = await response.json();
 
-  if (!cards.length && query.toLowerCase().includes('charizard')) {
-    return query.toLowerCase().includes('223/197') || query.toLowerCase().includes('charizard ex')
-      ? [charizardExFallback]
-      : [charizardFallback];
-  }
-
   return cards;
 }
 
 export function getFallbackCards(query: string): PokemonCard[] {
   const normalized = query.toLowerCase();
+  const numberMatch =
+    /#\s*(\d+)(?:\s*\/\s*(\d+))?|\b(\d+)\s*\/\s*(\d+)/i.exec(query) ??
+    /(?:^|\s)(\d+)$/.exec(query);
+  const cardNumber = numberMatch ? numberMatch[1] ?? numberMatch[3] : '';
+  const denominator = numberMatch ? numberMatch[2] ?? numberMatch[4] ?? '' : '';
 
-  if (normalized.includes('223/197') || normalized.includes('charizard ex')) {
+  if (
+    normalized.includes('charizard ex') &&
+    (!cardNumber || (cardNumber === '223' && (!denominator || denominator === '197')))
+  ) {
     return [charizardExFallback];
   }
 
-  return normalized.includes('charizard') ? [charizardFallback] : [];
+  if (
+    normalized.includes('charizard') &&
+    !normalized.includes('charizard ex') &&
+    (!cardNumber || (cardNumber === '4' && !denominator))
+  ) {
+    return [charizardFallback];
+  }
+
+  return [];
 }

@@ -1,24 +1,13 @@
 'use client';
 
-import { clearAuthUser, readAuthUser } from '@/lib/auth-session';
-import { useEffect, useState } from 'react';
-import type { AppUser } from '@/types/user';
+import Link from 'next/link';
+import { useAuthUser } from '@/lib/auth-session';
 
 export function ProfileCard() {
-  const [user, setUser] = useState<AppUser | null>(null);
-
-  useEffect(() => {
-    setUser(readAuthUser());
-  }, []);
+  const user = useAuthUser();
 
   if (!user) {
     return null;
-  }
-
-  function handleLogout() {
-    clearAuthUser();
-    setUser(null);
-    window.location.href = '/';
   }
 
   return (
@@ -30,13 +19,12 @@ export function ProfileCard() {
           <p className="mt-1 text-sm text-slate-400">{user.email}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-rose-500 hover:text-rose-300"
+        <Link
+          href="/account"
+          className="rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-yellow-500 hover:text-yellow-300"
         >
-          Odhlásit se
-        </button>
+          Správa účtu
+        </Link>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
