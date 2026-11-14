@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBoxSetQuery } from '@/lib/box-api';
 import type { PokemonCard } from '@/types/pokemon';
 
 function normalizeText(value: string) {
@@ -52,6 +53,65 @@ function matchesQuery(card: PokemonCard, parsedQuery: ParsedSearchQuery) {
   return nameMatches && numberMatches;
 }
 
+type TcgDexCardSummary = {
+  id: string;
+  localId: string;
+  name: string;
+  image?: string;
+};
+
+type TcgDexSetSummary = {
+  id: string;
+  name: string;
+  cardCount?: { official?: number };
+};
+
+async function searchTcgDexCards(parsedQuery: ParsedSearchQuery) {
+  const cardsUrl = new URL('https://api.tcgdex.net/v2/en/cards');
+  if (parsedQuery.name) {
+    cardsUrl.searchParams.set('name', parsedQuery.name);
+  } else {
+    cardsUrl.searchParams.set('localId', parsedQuery.number);
+  }
+
+  const [cardsResponse, setsResponse] = await Promise.all([
+    fetch(cardsUrl, { next: { revalidate: 300 } }),
+    fetch('https://api.tcgdex.net/v2/en/sets', { next: { revalidate: 3600 } }),
+  ]);
+
+  if (!cardsResponse.ok || !setsResponse.ok) {
+    throw new Error('TCGdex search failed.');
+  }
+
+  const [result, sets]: [TcgDexCardSummary[], TcgDexSetSummary[]] = await Promise.all([
+    cardsResponse.json(),
+    setsResponse.json(),
+  ]);
+  const setsById = new Map(sets.map((set) => [set.id, set]));
+  const cards: PokemonCard[] = result
+    .filter((card) => card.image)
+    .map((card): PokemonCard => {
+      const setId = card.id.slice(0, -(card.localId.length + 1));
+      const set = setsById.get(setId);
+      const image = card.image!.replace(/\/$/, '');
+
+      return {
+        id: card.id,
+        name: card.name,
+        number: card.localId,
+        set: { name: set?.name ?? setId, printedTotal: set?.cardCount?.official },
+        images: {
+          small: `${image}/low.png`,
+          large: `${image}/high.png`,
+        },
+        dataSource: 'tcgdex',
+      };
+    })
+    .filter((card) => matchesQuery(card, parsedQuery));
+
+  return cards;
+}
+
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query')?.trim();
 
@@ -59,7 +119,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Chybí vyhledávaný název.' }, { status: 400 });
   }
 
-  const parsedQuery = parseSearchQuery(query);
+  const parsedQuery = parseSearchQuery(getBoxSetQuery(query));
   const { name, number } = parsedQuery;
   if (!name && !number) {
     return NextResponse.json({ error: 'Zadej název karty nebo číslo karty.' }, { status: 400 });
@@ -67,48 +127,58 @@ export async function GET(request: NextRequest) {
 
   const apiUrl = new URL('https://api.pokemontcg.io/v2/cards');
   const searchTerms = [
-    name ? `name:${name}*` : '',
+    ...normalizeText(name)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((term) => `name:${term}*`),
     number ? `number:${number}*` : '',
   ].filter(Boolean);
   apiUrl.searchParams.set('q', searchTerms.join(' '));
   apiUrl.searchParams.set('pageSize', '250');
 
+  let pokemonTcgResponse: Response | undefined;
   try {
-    const cards: PokemonCard[] = [];
-    let page = 1;
-    let totalCount = 0;
-
-    while (page === 1 || (page - 1) * 250 < totalCount) {
-      apiUrl.searchParams.set('page', String(page));
-      const response = await fetch(apiUrl, { next: { revalidate: 60 } });
-
-      if (!response.ok) {
-        return NextResponse.json(
-          { error: 'Databázi karet se nepodařilo vyhledat.' },
-          { status: 502 },
-        );
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        pokemonTcgResponse = await fetch(apiUrl, { next: { revalidate: 300 } });
+      } catch (error) {
+        if (attempt === 1) {
+          throw error;
+        }
       }
 
-      const result: { data?: PokemonCard[]; totalCount?: number } = await response.json();
-      const pageCards = (result.data ?? []).filter((card) => matchesQuery(card, parsedQuery));
-      cards.push(...pageCards);
-
-      if (typeof result.totalCount !== 'number') {
+      if (
+        pokemonTcgResponse?.ok ||
+        (pokemonTcgResponse && pokemonTcgResponse.status < 500) ||
+        attempt === 1
+      ) {
         break;
       }
 
-      totalCount = result.totalCount;
-      if (!(result.data?.length)) {
-        break;
-      }
-
-      page += 1;
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
+    if (pokemonTcgResponse?.ok) {
+      const result: { data?: PokemonCard[] } = await pokemonTcgResponse.json();
+      const cards = (result.data ?? []).filter((card) => matchesQuery(card, parsedQuery));
+      return NextResponse.json(cards);
+    }
+  } catch {
+    // Try TCGdex if the primary API is unavailable.
+  }
 
+  try {
+    const cards = await searchTcgDexCards(parsedQuery);
     return NextResponse.json(cards);
   } catch {
+    if (pokemonTcgResponse && !pokemonTcgResponse.ok) {
+      return NextResponse.json(
+        { error: 'Databáze karet jsou dočasně nedostupné. Zkus to prosím za chvíli znovu.' },
+        { status: 502 },
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Databáze karet je momentálně nedostupná.' },
+      { error: 'Databáze karet jsou momentálně nedostupné.' },
       { status: 502 },
     );
   }

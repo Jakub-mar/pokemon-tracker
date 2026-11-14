@@ -33,6 +33,12 @@ Přihlášený admin najde na stránce **Administrace** seznam uživatelů. Mů�
 
 Stejné proměnné nastav také v prostředí nasazené aplikace. Účet vytvořený přes Google se založí automaticky při prvním přihlášení; pokud už v aplikaci existuje účet se stejným ověřeným e-mailem, přihlášení přes Google se napojí na tento účet.
 
+## Moje sbírka
+
+Po přihlášení lze z katalogu přidávat karty i boxy do soukromé sbírky. U karet se ukládá varianta a stav, u obou typů položek lze evidovat počet kusů a pořizovací cenu. Tržní ceny karet se obnovují z Pokémon TCG API; ceny boxů se zadávají ručně. Přehled počítá hodnotu portfolia a změnu vůči vyplněným pořizovacím cenám v USD a umožňuje seskupení podle edice/série nebo cenové hladiny.
+
+Lokální JSON úložiště uživatelů zahrnuje i jejich položky sbírky. Pro nasazení na více instancí nebo serverless platformu je potřeba uživatele a jejich sbírky přesunout do sdíleného databázového úložiště.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

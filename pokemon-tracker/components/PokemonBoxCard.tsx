@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { CollectionAddButton } from '@/components/collection/CollectionAddButton';
 import type { PokemonBox } from '@/types/box';
 
 type PokemonBoxCardProps = {
@@ -31,6 +32,7 @@ export function PokemonBoxCard({ box }: PokemonBoxCardProps) {
       {box.releaseDate && (
         <p className="mt-1 text-sm text-slate-400">Vydáno: {box.releaseDate}</p>
       )}
+      <CollectionAddButton type="box" box={box} />
     </article>
   );
 }

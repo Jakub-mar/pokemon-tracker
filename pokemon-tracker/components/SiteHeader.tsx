@@ -37,7 +37,7 @@ export function SiteHeader() {
         <Link href="/" className="text-sm text-slate-300 transition hover:text-white">
           Katalog
         </Link>
-        <Link href="/" className="text-sm text-slate-300 transition hover:text-white">
+        <Link href="/collection" className="text-sm text-slate-300 transition hover:text-white">
           Moje sbírka
         </Link>
         <Link href="/" className="text-sm text-slate-300 transition hover:text-white">

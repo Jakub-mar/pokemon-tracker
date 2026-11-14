@@ -32,24 +32,25 @@ export default function Home() {
     setIsLoading(true);
     setError('');
 
-    try {
-      const [cardResults, boxResults] = await Promise.all([
-        searchPokemonCards(query).catch(() => getFallbackCards(query)),
-        searchPokemonBoxes(query).catch(() => getFallbackBoxes(query)),
-      ]);
-      setCards(cardResults);
-      setBoxes(boxResults);
+    const [cardResult, boxResult] = await Promise.allSettled([
+      searchPokemonCards(query),
+      searchPokemonBoxes(query),
+    ]);
+    const cardResults =
+      cardResult.status === 'fulfilled' ? cardResult.value : getFallbackCards(query);
+    const boxResults =
+      boxResult.status === 'fulfilled' ? boxResult.value : getFallbackBoxes(query);
+    setCards(cardResults);
+    setBoxes(boxResults);
 
-      if (!cardResults.length && !boxResults.length) {
-        setError(`Pro „${query}“ jsme žádnou kartu ani box nenašli.`);
-      }
-    } catch {
-      setCards([]);
-      setBoxes([]);
-      setError('Karty ani boxy se teď nepodařilo načíst. Zkus to prosím znovu.');
-    } finally {
-      setIsLoading(false);
+    if (cardResult.status === 'rejected') {
+      setError('Databáze karet je teď dočasně nedostupná. Zobrazené výsledky mohou být neúplné; zkus to prosím za chvíli znovu.');
+    } else if (!cardResults.length && !boxResults.length) {
+      setError(`Pro „${query}“ jsme žádnou kartu ani box nenašli.`);
+    } else if (boxResult.status === 'rejected') {
+      setError('Boxy se teď nepodařilo načíst. Zobrazené výsledky mohou být neúplné; zkus to prosím za chvíli znovu.');
     }
+    setIsLoading(false);
   }
 
   return (
@@ -59,7 +60,7 @@ export default function Home() {
       <main className="max-w-6xl mx-auto px-6 py-10">
         <ProfileCard />
 
-        <div className="mb-10 text-center">
+        <div id="search" className="mb-10 text-center">
           <h2 className="text-4xl font-extrabold mb-3">Sleduj ceny Pokémon karet a boxů</h2>
           <p className="text-slate-400 mb-6">Aktuální přehled tržních cen, PSA ohodnocení a odkazů na nákup.</p>
           <SearchForm

@@ -27,14 +27,10 @@ export function ProfileCard() {
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Role</p>
           <p className="mt-2 text-xl font-semibold text-white">{user.role === 'admin' ? 'Admin' : 'Uživatel'}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Tarif</p>
-          <p className="mt-2 text-xl font-semibold text-white">{user.plan}</p>
         </div>
         <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Sbírka</p>

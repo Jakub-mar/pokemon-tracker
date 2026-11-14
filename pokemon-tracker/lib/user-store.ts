@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import type { CollectionItem } from '@/types/collection';
+import type { PokemonCard } from '@/types/pokemon';
 
 export type StoredUser = {
   id: string;
@@ -11,6 +13,7 @@ export type StoredUser = {
   role: 'admin' | 'user';
   isBlocked?: boolean;
   createdAt: string;
+  collection?: CollectionItem[];
 };
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
@@ -127,6 +130,108 @@ export async function updateUserDisplayName(id: string, displayName: string) {
 
   user.displayName = displayName;
   await writeUsers(users);
+  return user;
+}
+
+export async function getUserCollection(id: string) {
+  const user = await findUserById(id);
+
+  if (!user) {
+    throw new Error('Uživatelský účet nebyl nalezen.');
+  }
+
+  return user.collection ?? [];
+}
+
+export async function addCollectionItem(id: string, item: CollectionItem) {
+  const users = await readUsers();
+  const user = users.find((storedUser) => storedUser.id === id);
+
+  if (!user) {
+    throw new Error('Uživatelský účet nebyl nalezen.');
+  }
+
+  user.collection = [...(user.collection ?? []), item];
+  await writeUsers(users);
+  return user;
+}
+
+export async function updateCollectionItem(
+  id: string,
+  itemId: string,
+  changes: Partial<Pick<CollectionItem, 'quantity' | 'purchasePrice' | 'currentPrice' | 'product'>>,
+) {
+  const users = await readUsers();
+  const user = users.find((storedUser) => storedUser.id === id);
+
+  if (!user) {
+    throw new Error('Uživatelský účet nebyl nalezen.');
+  }
+
+  const item = user.collection?.find((collectionItem) => collectionItem.id === itemId);
+  if (!item) {
+    throw new Error('Položka sbírky nebyla nalezena.');
+  }
+
+  Object.assign(item, changes);
+  await writeUsers(users);
+  return user;
+}
+
+export async function deleteCollectionItem(id: string, itemId: string) {
+  const users = await readUsers();
+  const user = users.find((storedUser) => storedUser.id === id);
+
+  if (!user) {
+    throw new Error('Uživatelský účet nebyl nalezen.');
+  }
+
+  const collection = user.collection ?? [];
+  if (!collection.some((item) => item.id === itemId)) {
+    throw new Error('Položka sbírky nebyla nalezena.');
+  }
+
+  user.collection = collection.filter((item) => item.id !== itemId);
+  await writeUsers(users);
+  return user;
+}
+
+export async function updateCollectionMarketPrices(
+  id: string,
+  prices: Map<string, { card: PokemonCard; price: number | null; updatedAt: string }>,
+) {
+  const users = await readUsers();
+  const user = users.find((storedUser) => storedUser.id === id);
+
+  if (!user) {
+    throw new Error('Uživatelský účet nebyl nalezen.');
+  }
+
+  let hasChanges = false;
+  for (const item of user.collection ?? []) {
+    if (item.product.type !== 'card') {
+      continue;
+    }
+
+    const updatedPrice = prices.get(`${item.product.card.id}:${item.product.variant}`);
+    if (
+      updatedPrice &&
+      (
+        item.currentPrice !== updatedPrice.price ||
+        item.priceUpdatedAt !== updatedPrice.updatedAt ||
+        JSON.stringify(item.product.card) !== JSON.stringify(updatedPrice.card)
+      )
+    ) {
+      item.product.card = updatedPrice.card;
+      item.currentPrice = updatedPrice.price;
+      item.priceUpdatedAt = updatedPrice.updatedAt;
+      hasChanges = true;
+    }
+  }
+
+  if (hasChanges) {
+    await writeUsers(users);
+  }
   return user;
 }
 

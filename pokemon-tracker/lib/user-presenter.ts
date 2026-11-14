@@ -3,6 +3,7 @@ import type { StoredUser } from '@/lib/user-store';
 
 export function toAppUser(user: StoredUser): AppUser {
   const isAdmin = user.role === 'admin';
+  const collection = user.collection ?? [];
 
   return {
     id: user.id,
@@ -10,9 +11,14 @@ export function toAppUser(user: StoredUser): AppUser {
     email: user.email,
     displayName: user.displayName,
     role: user.role,
-    plan: isAdmin ? 'Premium' : 'Free',
-    portfolioValue: isAdmin ? 28400 : 0,
-    cardsOwned: isAdmin ? 128 : 0,
+    portfolioValue: collection.reduce(
+      (total, item) => total + (item.currentPrice ?? 0) * item.quantity,
+      0,
+    ),
+    cardsOwned: collection.reduce(
+      (total, item) => total + (item.product.type === 'card' ? item.quantity : 0),
+      0,
+    ),
     isVerified: isAdmin,
   };
 }
